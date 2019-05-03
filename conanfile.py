@@ -1,10 +1,9 @@
 import os
-import shutil
 
-from conans import ConanFile, tools, AutoToolsBuildEnvironment, RunEnvironment
+from conans import ConanFile, tools, CMake
 
 
-class AreaDetector(ConanFile):
+class ADKafkaPlugin(ConanFile):
     name = "ADKafkaPlugin"
     version = "0.0"
     license = ""
@@ -16,7 +15,10 @@ class AreaDetector(ConanFile):
     default_options = "shared=False"
     generators = "gcc"
     requires = 'epics/3.16.1-4.6.0-dm6@ess-dmsc/stable', \
-               'synapps/6.0@devel/epics'
+               'synapps/6.0@devel/epics', \
+               'FlatBuffers/1.9.0@ess-dmsc/stable', \
+               'librdkafka/0.11.5@ess-dmsc/stable'
+
     submodules = ["PluginKafka"]
 
     def get_epics_info(self):
@@ -39,11 +41,11 @@ class AreaDetector(ConanFile):
             print(e)
         return result
 
-    # def _replace_release(self, install_location):
-    #     source = os.path.join("configure", "RELEASE")
-    #     tools.replace_in_file(source, "#INSTALL_LOCATION_APP=<fullpathname>",
-    #                           "#INSTALL_LOCATION_APP=" + install_location)
-    #
+    def _replace_release_loca(self, install_location):
+        source = os.path.join("configure", "RELEASE.local")
+        tools.replace_in_file(source, "#SUPPORT",
+                              "SUPPORT=" + install_location)
+
     # def _replace_release_support_local(self, support):
     #     source = os.path.join("configure", "RELEASE_SUPPORT.local")
     #     orig = "SUPPORT=/corvette/home/epics/devel"
@@ -193,12 +195,36 @@ class AreaDetector(ConanFile):
     def source(self):
         git = tools.Git()
         git.clone(self.url)
-        # for submodule in self.submodules:
-        #     git.run("submodule update --init " + submodule)
 
     def build(self):
-        pass
+        support = ''
+        area_detector = ''
+        print('%r'%self.deps_cpp_info['synapps'].build_paths)
 
+        # with tools.chdir('configure')
+        #
+        #
+        # tools.mkdir('build')
+        # with tools.chdir('build'):
+        #     try:
+        #         self.run('cmake ..')
+        #     except Exception as e:
+        #         print(e)
+
+
+
+        # cmake = CMake(self)
+        # try:
+        #     cmake.configure(source_folder=self.source_folder,
+        #                 build_folder=self.build_folder+'/build')
+        #     #cmake.configure()
+        #     cmake.build()
+        #     cmake.test() # Build the "RUN_TESTS" or "test" target
+        # except Exception as e:
+        #     print('%r'%e)
+
+
+        # Build the "install" target, defining CMAKE_INSTALL_PREFIX to self.package_folder
         # self._edit_config()
         #
         # with tools.environment_append({'EPICS_HOST_ARCH': 'linux-x86_64'}):
@@ -207,23 +233,24 @@ class AreaDetector(ConanFile):
         #
         #     autotools.make(vars=env_build.vars)
 
-            #    def package(self):
-            #
-            #        if tools.os_info.is_linux:
-            #            arch = "linux-x86_64"
-            #        elif tools.os_info.is_macos:
-            #            arch = "darwin-x86"
-            #
-            #        for module in self._list_wanted_modules():
-            #            path = os.path.join('synApps/support', module, 'lib', arch)
-            #            if os.path.isdir(path):
-            #                self.copy("*.a", dst="lib", src=path, keep_path=False)
-            #                self.copy("*.so", dst="lib", src=path, keep_path=False)
-            #                self.copy("*.dylib", dst="lib", src=path, keep_path=False)
-            #            path = os.path.join('synApps/support', module, 'include')
-            #            if os.path.isdir(path):
-            #                self.copy("*.h", dst="include", src=path, keep_path=False)
-            #
-            #    def package_info(self):
-            #        self.cpp_info.libs = self.collect_libs()
-            #
+    def package(self):
+        pass
+        #
+        #        if tools.os_info.is_linux:
+        #            arch = "linux-x86_64"
+        #        elif tools.os_info.is_macos:
+        #            arch = "darwin-x86"
+        #
+        #        for module in self._list_wanted_modules():
+        #            path = os.path.join('synApps/support', module, 'lib', arch)
+        #            if os.path.isdir(path):
+        #                self.copy("*.a", dst="lib", src=path, keep_path=False)
+        #                self.copy("*.so", dst="lib", src=path, keep_path=False)
+        #                self.copy("*.dylib", dst="lib", src=path, keep_path=False)
+        #            path = os.path.join('synApps/support', module, 'include')
+        #            if os.path.isdir(path):
+        #                self.copy("*.h", dst="include", src=path, keep_path=False)
+        #
+    def package_info(self):
+        self.cpp_info.libs = self.collect_libs()
+
